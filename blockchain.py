@@ -1,4 +1,5 @@
 import hashlib
+import datetime
 
 class BlockChain():
 
@@ -8,11 +9,28 @@ class BlockChain():
 		#ジェネシスブロックを追加
 		self.add(self.get_genesis_block())
 		
-	def add(self,block):
+	def add(self,block=None,data=None):
+
+		#blockとdataの両方が指定されていない場合
+		if not (block or data):
+			return 
+
+		#dataが指定されている場合
+		if not block:
+			index=self.latest_index+1
+			previous_hash=self.blocks[-1].hash
+			timestamp=int(datetime.datetime.timestamp(datetime.datetime.now()))
+			hash=Block.calc_hash_from_args(index,previous_hash,timestamp,data)
+			block=Block(index,previous_hash,timestamp,data,hash)
+		
 		# blockが有効ならばblocksに追加
 		if len(self.blocks)==0 or block.is_valid(self.blocks[-1]):
 			self.blocks.append(block)
 			self.latest_index+=1
+		return
+
+
+
 	def get_genesis_block(self):
 		return Block	(0, 
 				"0",
@@ -31,12 +49,20 @@ class Block():
 		self.hash=hash
 	def is_valid(self,pre_block):
 		if pre_block.index+1 != self.index:
+			print("index")
 			return False
-		if pre_block.hash != self.previous.hash:
+		if pre_block.hash != self.previous_hash:
+			print("previous_hash")
 			return False
 		if self.calc_hash()!=self.hash:
+			print("calc_hash")
 			return False
 		return True
 		
 	def calc_hash(self):
+
 		return hashlib.sha256((str(self.index)+self.previous_hash+str(self.timestamp)+str(self.data)).encode('utf-8')).hexdigest()
+
+	@classmethod
+	def calc_hash_from_args(cls,index,previous_hash,timestamp,data):
+		return hashlib.sha256((str(index)+previous_hash+str(timestamp)+str(data)).encode('utf-8')).hexdigest()
