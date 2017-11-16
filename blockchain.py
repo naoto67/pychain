@@ -1,7 +1,7 @@
 import hashlib
 import datetime
 
-class BlockChain():
+class Blockchain():
     def __init__(self):
         self.blocks = []
         self.latest_index=-1
@@ -26,7 +26,7 @@ class BlockChain():
             block=Block(index,previous_hash,timestamp,data,hash)
 
         # blockが有効ならばblocksに追加
-        if len(self.blocks)==0 or block.is_valid(self.blocks[-1]):
+        if len(self)==0 or block.is_valid(self.blocks[-1]):
             self.blocks.append(block)
             self.latest_index+=1
         return
@@ -39,15 +39,32 @@ class BlockChain():
             "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7"
         )
 
-
     def is_valid(self):
+        if self.str(self.blocks[0])!=self.str(self.get_genesis_block()):
+            return False
+        for bl in self.blocks:
+            if bl.index!=0:
+
+                block=Block(
+                        bl.index,
+                        bl.previous_hash,
+                        bl.timestamp,
+                        bl.data,
+                        bl.hash
+                        )
+                if not block.is_valid(self.blocks[bl.index-1]):
+                    print(bl.index)
+                    return False
         return True
+
+    def str(self,block):
+        return str(block.index)+block.previous_hash+str(block.timestamp)+block.data+block.hash
+
     def replace(self,blockchain):
         if blockchain.is_valid() and len(blockchain) > len(self):
-            self.blocks=blockchain
-            self.latest_index=blockchain[-1].index
-
-
+            self.blocks=blockchain.blocks
+            self.latest_index=blockchain.blocks[-1].index
+     
 
 class Block():
 
