@@ -40,7 +40,7 @@ class Blockchain():
         )
 
     def is_valid(self):
-        if self.str(self.blocks[0])!=self.str(self.get_genesis_block()):
+        if str(self.blocks[0])!=str(self.get_genesis_block()):
             return False
         for bl in self.blocks:
             if bl.index!=0:
@@ -53,12 +53,8 @@ class Blockchain():
                         bl.hash
                         )
                 if not block.is_valid(self.blocks[bl.index-1]):
-                    print(bl.index)
                     return False
         return True
-
-    def str(self,block):
-        return str(block.index)+block.previous_hash+str(block.timestamp)+block.data+block.hash
 
     def replace(self,blockchain):
         if blockchain.is_valid() and len(blockchain) > len(self):
@@ -68,28 +64,29 @@ class Blockchain():
 
 class Block():
 
-	def __init__(self,index,previous_hash,timestamp,data,hash):
-		self.index=index
-		self.previous_hash=previous_hash
-		self.timestamp=timestamp
-		self.data=data
-		self.hash=hash
-	def is_valid(self,pre_block):
-		if pre_block.index+1 != self.index:
-			print("index")
-			return False
-		if pre_block.hash != self.previous_hash:
-			print("previous_hash")
-			return False
-		if self.calc_hash()!=self.hash:
-			print("calc_hash")
-			return False
-		return True
+    def __init__(self,index,previous_hash,timestamp,data,hash):
+        self.index=index
+        self.previous_hash=previous_hash
+        self.timestamp=timestamp
+        self.data=data
+        self.hash=hash
 
-	def calc_hash(self):
+    def __repr__(self):
+        return str(self.index)+self.previous_hash+str(self.timestamp)+self.data+self.hash
 
-		return hashlib.sha256((str(self.index)+self.previous_hash+str(self.timestamp)+str(self.data)).encode('utf-8')).hexdigest()
-
-	@classmethod
-	def calc_hash_from_args(cls,index,previous_hash,timestamp,data):
-		return hashlib.sha256((str(index)+previous_hash+str(timestamp)+str(data)).encode('utf-8')).hexdigest()
+    def is_valid(self,pre_block):
+        if pre_block.index+1 != self.index:
+            print("index")
+            return False
+        if pre_block.hash != self.previous_hash:
+            print("previous_hash")
+            return False
+        if self.calc_hash()!=self.hash:
+            print("calc_hash")
+            return False
+        return True
+    def calc_hash(self):
+        return hashlib.sha256((str(self.index)+self.previous_hash+str(self.timestamp)+str(self.data)).encode('utf-8')).hexdigest()
+    @classmethod
+    def calc_hash_from_args(cls,index,previous_hash,timestamp,data):
+        return hashlib.sha256((str(index)+previous_hash+str(timestamp)+str(data)).encode('utf-8')).hexdigest()
