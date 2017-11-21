@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 Test pychain code on your enviroment
 ```
-pytest -v --flack8 --pep8
+pytest -v --flake8 --pep8
 ```
 
 # License
