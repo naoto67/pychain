@@ -33,7 +33,7 @@ class Blockchain():
             self.latest_index += 1
         return
 
-    def get_genesis_block(self):
+   def get_genesis_block(self):
         return Block(
             0,
             "0",
