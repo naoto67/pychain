@@ -21,7 +21,7 @@ Test pychain code on your enviroment
 pytest -v --flake8 --pep8
 ```
 
-# how to use curl
+# How to use curl
 Get
 ```
 curl http://localhost:8000/hello?name=<name>
@@ -29,7 +29,7 @@ curl http://localhost:8000/hello?name=<name>
 
 Post
 ```
-curl --data 'name=<name>' http://localhost:8000/hellopost
+curl --data name=<name> http://localhost:8000/hellopost
 ```
 
 # License
