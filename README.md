@@ -21,6 +21,17 @@ Test pychain code on your enviroment
 pytest -v --flack5 --pep8
 ```
 
+# curlの使い方
+Get
+```
+curl http://localhost:8000/hello?name=<name>
+```
+
+Post
+```
+curl --data 'name=<name>' http://localhost:8000/hellopost
+```
+
 # License
 
 MIT license
