@@ -32,9 +32,9 @@ class Blockchain():
             self.blocks.append(block)
             self.latest_index += 1
         return
-
-   def get_genesis_block(self):
-        return Block(
+    
+    def get_genesis_block(self):
+       return Block(
             0,
             "0",
             1465154705,
