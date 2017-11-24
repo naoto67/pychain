@@ -21,7 +21,7 @@ Test pychain code on your enviroment
 pytest -v --flake8 --pep8
 ```
 
-# curlの使い方
+# how to use curl
 Get
 ```
 curl http://localhost:8000/hello?name=<name>
