@@ -21,15 +21,22 @@ Test pychain code on your enviroment
 pytest -v --flake8 --pep8
 ```
 
-# How to use curl
-Get
+# How to run pychain server in development enviroment
+
+Run server on 8000 port as default
+
 ```
-curl http://localhost:8000/hello?name=<name>
+python main.py
 ```
 
-Post
+Get blocks via curl command
 ```
-curl --data name=<name> http://localhost:8000/hellopost
+curl http://localhost:8000/blocks
+```
+
+Add blocks via curl command
+```
+curl --data '{"data" : "Some data to the first block"}' http://localhost:8000/mineBlock
 ```
 
 # License

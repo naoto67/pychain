@@ -1,4 +1,7 @@
+import json
+
 from bottle import post, run, template, request, get
+
 from blockchain import Blockchain
 
 blockchain = Blockchain()
@@ -6,14 +9,15 @@ blockchain = Blockchain()
 
 @get('/blocks')
 def get_blocks():
-    return template('<b>{{blocks}}</b>', blocks=blockchain.blocks)
+    json_blockchain = blockchain.to_json()
+    return template(json_blockchain)
 
 
 @post('/mineBlock')
 def mine_block():
-    data = request.params.get('data')
-    blockchain.add(data=data)
-    return template('<b>add data:{{blocks}}</b>', blocks=blockchain.blocks[-1].data)
+    dic = json.load(request.body)
+    blockchain.add(data=dic["data"])
+    return
 
 
 run(host='localhost', port=8000)
