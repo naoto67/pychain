@@ -29,14 +29,26 @@ Run server on 8000 port as default
 python main.py
 ```
 
-Get blocks via curl command
+## Do process for blocks or peers via curl commands
+
+#### Get blocks
 ```
 curl http://localhost:8000/blocks
 ```
 
-Add blocks via curl command
+#### Add blocks
 ```
 curl --data '{"data" : "Some data to the first block"}' http://localhost:8000/mineBlock
+```
+
+#### Get peers
+```
+curl http://localhost:8000/peers
+```
+
+#### Add peer
+```
+curl --data '{"peer" : "ws://localhost:8000"}' http://localhost:8000/addPeer
 ```
 
 # License

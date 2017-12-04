@@ -5,13 +5,14 @@ blockchain = Blockchain()
 
 peers = []
 
+
 class HTTPServer():
 
     def __init__(self):
         return
 
     def mine_block(self, data):
-        blockchain.add(data = data)
+        blockchain.add(data=data)
 
     def get_blockchain(self):
         return blockchain.blocks
@@ -22,13 +23,24 @@ class HTTPServer():
     def add_peer(self, ip, port):
         peers.append(Peer(ip, port))
 
+
 class P2PServer():
 
     def __init__(self):
         return
+
 
 class Peer():
 
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
+
+    def __repr__(self):
+        return self.ip + ":" + str(self.port)
+
+    def to_dict(self):
+        return {
+            "ip": self.ip,
+            "port": self.port
+        }
