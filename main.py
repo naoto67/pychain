@@ -1,5 +1,8 @@
 import json
+import socket
 from urllib.parse import urlparse
+from multiprocessing import Process
+
 
 from bottle import post, run, request, get
 
@@ -39,4 +42,25 @@ def get_peers():
     return json_peers
 
 
-run(host='localhost', port=8000)
+def start_httpserver():
+    run(host='localhost', port=8000)
+
+
+p = Process(target=start_httpserver)
+p.start()
+
+
+s = socket.socket()
+
+port = 5000
+s.bind(('', port))
+
+while True:
+    print('listening')
+    s.listen(5)
+    c, addr = s.accept()
+    print('receving')
+    print(c.recv(4096))
+    c.close()
+s.close()
+p.close()
