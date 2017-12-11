@@ -10,6 +10,8 @@ from blockchain import Blockchain
 
 from server import Peer
 
+from const import RESPONSE_BLOCKCHAIN
+
 
 blockchain = Blockchain()
 
@@ -26,6 +28,11 @@ def get_blocks():
 def mine_block():
     dic = json.load(request.body)
     blockchain.add(data=dic["data"])
+    resp = {
+        "type": RESPONSE_BLOCKCHAIN,
+        "data": blockchain.blocks[-1].to_dict()
+    }
+    broadcast(json.dumps(resp))
     return
 
 
@@ -33,13 +40,25 @@ def mine_block():
 def add_peer():
     dic = json.load(request.body)
     url = urlparse(dic["peer"])
-    peers.append(Peer(url.hostname, url.port))
+    ws = socket.socket()
+    try:
+        ws.connect((url.hostname, url.port))
+        peers.append(Peer(url.hostname, url.port, ws))
+    except ConnectionRefusedError:
+        print("socket connection error")
+        ws.close()
+    return
 
 
 @get('/peers')
 def get_peers():
     json_peers = json.dumps([str(p) for p in peers])
     return json_peers
+
+
+def broadcast(resp):
+    for p in peers:
+        p.send(resp)
 
 
 def start_httpserver():
@@ -63,4 +82,4 @@ while True:
     print(c.recv(4096))
     c.close()
 s.close()
-p.close()
+p.join()

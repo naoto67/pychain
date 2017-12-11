@@ -1,3 +1,5 @@
+import json
+
 from blockchain import Blockchain
 
 
@@ -32,9 +34,10 @@ class P2PServer():
 
 class Peer():
 
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, socket):
         self.ip = ip
         self.port = port
+        self.socket = socket
 
     def __repr__(self):
         return self.ip + ":" + str(self.port)
@@ -44,3 +47,6 @@ class Peer():
             "ip": self.ip,
             "port": self.port
         }
+
+    def send(self, data):
+        self.socket.send(str.encode(json.dumps(data)))
