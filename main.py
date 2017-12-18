@@ -10,7 +10,7 @@ from blockchain import Blockchain
 
 from server import Peer
 
-from const import RESPONSE_BLOCKCHAIN
+from const import RESPONSE_BLOCKCHAIN, QUERY_LATEST, QUEPY_ALL
 
 
 blockchain = Blockchain()
@@ -74,12 +74,27 @@ s = socket.socket()
 port = 5000
 s.bind(('', port))
 
+def message_handler(message):
+    if message["type"] == QUERY_LATEST:
+
+    if message["type"] == QUERY_ALL:
+
+    if message["type"] == RESPONSE_BLOCKCHAIN:
+        handle_blockchain_response(message)
+
+
+def handle_blockchain_response(message):
+
+
+
+
 while True:
     print('listening')
     s.listen(5)
     c, addr = s.accept()
     print('receving')
-    print(c.recv(4096))
+    recv = json.load(c.recv(4096))
+    message_handler(recv)
     c.close()
 s.close()
 p.join()
