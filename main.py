@@ -1,17 +1,30 @@
 import json
 import socket
+import argparse
 from urllib.parse import urlparse
 from multiprocessing import Process
 
 
 from bottle import post, run, request, get
 
-from blockchain import Blockchain
+from blockchain import Blockchain, Block
 
 from server import Peer
 
-from const import RESPONSE_BLOCKCHAIN, QUERY_LATEST, QUEPY_ALL
+from const import RESPONSE_BLOCKCHAIN, QUERY_LATEST, QUERY_ALL
 
+parser = argparse.ArgumentParser(description='Pychain is an implementation of NaiveChain in Python3')
+parser.add_argument('--http-port',
+                    action='store',
+                    default=8000,
+                    type=int,
+                    help='http port(default:8000)')
+parser.add_argument('--socket-port',
+                    action='store',
+                    default=5000,
+                    type=int,
+                    help='socket port(default:5000)')
+args = parser.parse_args()
 
 blockchain = Blockchain()
 
@@ -21,6 +34,7 @@ peers = []
 @get('/blocks')
 def get_blocks():
     json_blockchain = blockchain.to_json()
+    print(blockchain.blocks)
     return json_blockchain
 
 
@@ -30,9 +44,9 @@ def mine_block():
     blockchain.add(data=dic["data"])
     resp = {
         "type": RESPONSE_BLOCKCHAIN,
-        "data": blockchain.blocks[-1].to_dict()
+        "data": [blockchain.blocks[-1].to_dict()]
     }
-    broadcast(json.dumps(resp))
+    broadcast(resp)
     return
 
 
@@ -62,7 +76,7 @@ def broadcast(resp):
 
 
 def start_httpserver():
-    run(host='localhost', port=8000)
+    run(host='localhost', port=args.http_port)
 
 
 p = Process(target=start_httpserver)
@@ -71,21 +85,34 @@ p.start()
 
 s = socket.socket()
 
-port = 5000
+port = args.socket_port
 s.bind(('', port))
+
 
 def message_handler(message):
     if message["type"] == QUERY_LATEST:
-
+        pass
     if message["type"] == QUERY_ALL:
-
+        pass
     if message["type"] == RESPONSE_BLOCKCHAIN:
         handle_blockchain_response(message)
 
 
 def handle_blockchain_response(message):
-
-
+    global blockchain
+    received_blocks = sorted(message["data"], key=lambda k: k["index"])
+    latest_block = received_blocks[-1]
+    my_latest_block = blockchain.get_latest_block()
+    if latest_block["index"] > my_latest_block.index:
+        if(my_latest_block.hash == latest_block["previous_hash"]):
+            block = Block.make_from_dict(latest_block)
+            blockchain.add(block=block)
+            print(blockchain.blocks)
+            resp = {
+                'type': RESPONSE_BLOCKCHAIN,
+                'data': [latest_block]
+            }
+            broadcast(resp)
 
 
 while True:
@@ -93,7 +120,7 @@ while True:
     s.listen(5)
     c, addr = s.accept()
     print('receving')
-    recv = json.load(c.recv(4096))
+    recv = json.loads(c.recv(4096))
     message_handler(recv)
     c.close()
 s.close()

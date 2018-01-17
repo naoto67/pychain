@@ -14,6 +14,9 @@ class Blockchain():
     def __len__(self):
         return len(self.blocks)
 
+    def get_latest_block(self):
+        return self.blocks[-1]
+
     def add(self, block=None, data=None):
 
         # blockとdataの両方が指定されていない場合
@@ -99,6 +102,16 @@ class Block():
             "data": str(self.data),
             "hash": self.hash
         })
+
+    @classmethod
+    def make_from_dict(cls, dic):
+        return cls(
+            dic["index"],
+            dic["previous_hash"],
+            dic["timestamp"],
+            dic["data"],
+            dic["hash"]
+        )
 
     def to_json(self):
         return json.dumps(self.to_dict())
