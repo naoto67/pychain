@@ -1,6 +1,6 @@
 import json
-import socket
 import argparse
+import requests
 from urllib.parse import urlparse
 from multiprocessing import Process
 
@@ -19,11 +19,6 @@ parser.add_argument('--http-port',
                     default=8000,
                     type=int,
                     help='http port(default:8000)')
-parser.add_argument('--socket-port',
-                    action='store',
-                    default=5000,
-                    type=int,
-                    help='socket port(default:5000)')
 args = parser.parse_args()
 
 blockchain = Blockchain()
@@ -54,13 +49,13 @@ def mine_block():
 def add_peer():
     dic = json.load(request.body)
     url = urlparse(dic["peer"])
-    ws = socket.socket()
+
     try:
-        ws.connect((url.hostname, url.port))
-        peers.append(Peer(url.hostname, url.port, ws))
+        r = requests.get("http://" + url.hostname + ":" + str(url.port) + "/peers")
+        if r.status_code == 200:
+            peers.append(Peer(url.hostname, url.port))
     except ConnectionRefusedError:
         print("socket connection error")
-        ws.close()
     return
 
 
@@ -68,6 +63,11 @@ def add_peer():
 def get_peers():
     json_peers = json.dumps([str(p) for p in peers])
     return json_peers
+
+@post('/websocket')
+def websocket():
+    data = json.load(request.body)
+    message_handler(data)
 
 
 def broadcast(resp):
@@ -77,16 +77,6 @@ def broadcast(resp):
 
 def start_httpserver():
     run(host='localhost', port=args.http_port)
-
-
-p = Process(target=start_httpserver)
-p.start()
-
-
-s = socket.socket()
-
-port = args.socket_port
-s.bind(('', port))
 
 
 def message_handler(message):
@@ -107,7 +97,6 @@ def handle_blockchain_response(message):
         if(my_latest_block.hash == latest_block["previous_hash"]):
             block = Block.make_from_dict(latest_block)
             blockchain.add(block=block)
-            print(blockchain.blocks)
             resp = {
                 'type': RESPONSE_BLOCKCHAIN,
                 'data': [latest_block]
@@ -115,13 +104,4 @@ def handle_blockchain_response(message):
             broadcast(resp)
 
 
-while True:
-    print('listening')
-    s.listen(5)
-    c, addr = s.accept()
-    print('receving')
-    recv = json.loads(c.recv(4096))
-    message_handler(recv)
-    c.close()
-s.close()
-p.join()
+start_httpserver()
