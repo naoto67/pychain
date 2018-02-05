@@ -53,7 +53,13 @@ def add_peer():
     try:
         r = requests.get("http://" + url.hostname + ":" + str(url.port) + "/peers")
         if r.status_code == 200:
-            peers.append(Peer(url.hostname, url.port))
+            p = Peer(url.hostname, url.port)
+            peers.append(p)
+            resp = {
+                'type': QUERY_LATEST,
+                'host': 'localhost:' + str(args.http_port)
+            }
+            p.send(data=resp)
     except ConnectionRefusedError:
         print("socket connection error")
     return
@@ -66,6 +72,7 @@ def get_peers():
 
 @post('/websocket')
 def websocket():
+    print("websocket")
     data = json.load(request.body)
     message_handler(data)
 
@@ -81,9 +88,18 @@ def start_httpserver():
 
 def message_handler(message):
     if message["type"] == QUERY_LATEST:
-        pass
+        resp = {
+            'type': RESPONSE_BLOCKCHAIN,
+            'data': blockchain.blocks[-1].to_dict(),
+        }
+        #requests.post("http://"+message['host']+"/websocket", data=json.dumps(resp))
+        requests.get("http://"+message['host']+"/peers")
     if message["type"] == QUERY_ALL:
-        pass
+        resp = {
+            'type': RESPONSE_BLOCKCHAIN,
+            'data': blockchain.blocks.to_dict(),
+        }
+        requests.post("http://"+message['host']+"/websocket", data=json.dumps(resp))
     if message["type"] == RESPONSE_BLOCKCHAIN:
         handle_blockchain_response(message)
 
@@ -102,6 +118,16 @@ def handle_blockchain_response(message):
                 'data': [latest_block]
             }
             broadcast(resp)
+        elif(len(received_blocks) == 1):
+            resp = {
+                'type': QUERY_ALL,
+                'host': 'localhost:' + str(args.http_port)
+            }
+            broadcast(resp)
+        else:
+            blocks = [ Block.make_from_dict(b) for b in received_blocks]
+            blockchain.replace(blocks)
+
 
 
 start_httpserver()

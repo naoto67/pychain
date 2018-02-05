@@ -5,11 +5,15 @@ import json
 
 class Blockchain():
 
-    def __init__(self):
-        self.blocks = []
-        self.latest_index = -1
+    def __init__(self, blocks=None):
         # ジェネシスブロックを追加
-        self.add(self.get_genesis_block())
+        if blocks:
+            self.blocks = blocks
+            self.latest_index = len(blocks) - 1
+        else:
+            self.blocks = []
+            self.latest_index = -1
+            self.add(self.get_genesis_block())
 
     def __len__(self):
         return len(self.blocks)
@@ -54,13 +58,17 @@ class Blockchain():
                 return False
         return True
 
-    def replace(self, blockchain):
+    def replace(self, blocks):
+        blockchain = Blockchain(blocks=blocks)
         if blockchain.is_valid() and len(blockchain) > len(self):
             self.blocks = blockchain.blocks
             self.latest_index = blockchain.blocks[-1].index
 
     def to_json(self):
-        return json.dumps([b.to_dict() for b in self.blocks])
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        return [b.to_dict() for b in self.blocks]
 
 
 class Block():
