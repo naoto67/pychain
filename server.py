@@ -35,9 +35,10 @@ class P2PServer():
 
 class Peer():
 
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, socket):
         self.ip = ip
         self.port = port
+        self.socket = socket
 
     def __repr__(self):
         return self.ip + ":" + str(self.port)
@@ -49,5 +50,4 @@ class Peer():
         }
 
     def send(self, data):
-        r = requests.post("http://" + str(self) + "/websocket", data=json.dumps(data))
-        return r
+        self.socket.send(json.dumps(data).encode('utf-8'))

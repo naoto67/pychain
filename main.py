@@ -1,11 +1,15 @@
 import json
 import argparse
 import requests
+import socket
 from urllib.parse import urlparse
 from multiprocessing import Process
 
 
-from bottle import post, run, request, get
+import tornado.ioloop
+import tornado.web
+
+#from bottle import post, run, request, get
 
 from blockchain import Blockchain, Block
 
@@ -25,6 +29,86 @@ blockchain = Blockchain()
 
 peers = []
 
+
+class BlockHandler(tornado.web.RequestHandler):
+    def post(self):
+        dic = json.loads(self.request.body)
+        blockchain.add(data=dic["data"])
+        resp = {
+            "type": RESPONSE_BLOCKCHAIN,
+            "data": [blockchain.blocks[-1].to_dict()]
+        }
+        broadcast(resp)
+        return
+
+
+class Block(tornado.web.RequestHandler):
+    def get(self):
+        json_blockchain = blockchain.to_json()
+        print(blockchain.blocks)
+        self.write(json_blockchain)
+
+
+class addPeerHandler(tornado.web.RequestHandler):
+    def post(self):
+        dic = json.loads(self.request.body)
+        url = urlparse(dic["peer"])
+        try:
+            sock = create_connection("ws://" + url.hostname + ":" + str(url.port) + "websocket")
+            p = Peer(url.hostname, url.port, sock)
+            peers.append(p)
+            resp = {
+                'type': QUERY_LATEST,
+                'host': 'localhost:' + str(args.http_port)
+            }
+            print("connection is success")
+            p.send(data=resp)
+        except ConnectionRefusedError:
+            print("socket connection error")
+        return
+
+
+class Peers(tornado.web.RequestHandler):
+    def get(self):
+        json_peers = json.dumps([str(p) for p in peers])
+        self.write(json_peers)
+
+
+class WebSocket(tornado.websocket.WebSocketHandler):
+    def open(self):
+        print('open websocket connection')
+
+    def on_message(self, message):
+        message = json.loads(message)
+        if message["type"] == QUERY_LATEST:
+            resp = {
+                'type': RESPONSE_BLOCKCHAIN,
+                'data': blockchain.blocks[-1].to_dict(),
+            }
+            sock = create_connection("ws://" + message["host"] + "websocket")
+            sock.send(json.dumps(resp).encode('utf-8'))
+
+        if message["type"] == QUERY_ALL:
+            resp = {
+                'type': RESPONSE_BLOCKCHAIN,
+                'data': blockchain.blocks.to_dict(),
+            }
+            sock = create_connection("ws://" + message["host"] + "websocket")
+            sock.send(json.dumps(resp).encode('utf-8'))
+        if message["type"] == RESPONSE_BLOCKCHAIN:
+            handle_blockchain_response(message)
+
+
+    def close(self):
+        print("close websocket connection")
+
+def broadcast(resp):
+    for p in peers:
+        p.send(resp)
+
+
+
+"""
 
 @get('/blocks')
 def get_blocks():
@@ -131,3 +215,17 @@ def handle_blockchain_response(message):
 
 
 start_httpserver()
+
+"""
+
+application = tornado.web.Application([
+    (r"/mineBlock", BlockHandler),
+    (r"/blocks", Block),
+    (r"/addPeer", addPeerHandler),
+    (r"/peers", Peers),
+])
+
+
+if __name__ == "__main__":
+    application.listen(args.http_port)
+    tornado.ioloop.IOLoop.instance().start()
