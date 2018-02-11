@@ -3,13 +3,13 @@ import argparse
 import requests
 import socket
 from urllib.parse import urlparse
-from multiprocessing import Process
+from websocket import create_connection
 
 
 import tornado.ioloop
 import tornado.web
+import tornado.websocket
 
-#from bottle import post, run, request, get
 
 from blockchain import Blockchain, Block
 
@@ -54,7 +54,7 @@ class addPeerHandler(tornado.web.RequestHandler):
         dic = json.loads(self.request.body)
         url = urlparse(dic["peer"])
         try:
-            sock = create_connection("ws://" + url.hostname + ":" + str(url.port) + "websocket")
+            sock = create_connection("ws://" + url.hostname + ":" + str(url.port) + "/websocket")
             p = Peer(url.hostname, url.port, sock)
             peers.append(p)
             resp = {
@@ -83,9 +83,9 @@ class WebSocket(tornado.websocket.WebSocketHandler):
         if message["type"] == QUERY_LATEST:
             resp = {
                 'type': RESPONSE_BLOCKCHAIN,
-                'data': blockchain.blocks[-1].to_dict(),
+                'data': [blockchain.blocks[-1].to_dict()],
             }
-            sock = create_connection("ws://" + message["host"] + "websocket")
+            sock = create_connection("ws://" + message["host"] + "/websocket")
             sock.send(json.dumps(resp).encode('utf-8'))
 
         if message["type"] == QUERY_ALL:
@@ -93,7 +93,7 @@ class WebSocket(tornado.websocket.WebSocketHandler):
                 'type': RESPONSE_BLOCKCHAIN,
                 'data': blockchain.blocks.to_dict(),
             }
-            sock = create_connection("ws://" + message["host"] + "websocket")
+            sock = create_connection("ws://" + message["host"] + "/websocket")
             sock.send(json.dumps(resp).encode('utf-8'))
         if message["type"] == RESPONSE_BLOCKCHAIN:
             handle_blockchain_response(message)
@@ -105,6 +105,30 @@ class WebSocket(tornado.websocket.WebSocketHandler):
 def broadcast(resp):
     for p in peers:
         p.send(resp)
+
+
+def handle_blockchain_response(message):
+    received_blocks = sorted(message["data"], key=lambda k: k["index"])
+    latest_block = received_blocks[-1]
+    my_latest_block = blockchain.get_latest_block()
+    if latest_block["index"] > my_latest_block.index:
+        if(my_latest_block.hash == latest_block["previous_hash"]):
+            block = Block.make_from_dict(latest_block)
+            blockchain.add(block=block)
+            resp = {
+                'type': RESPONSE_BLOCKCHAIN,
+                'data': [latest_block]
+            }
+            broadcast(resp)
+        elif(len(received_blocks) == 1):
+            resp = {
+                'type': QUERY_ALL,
+                'host': 'localhost:' + str(args.http_port)
+            }
+            broadcast(resp)
+        else:
+            blocks = [ Block.make_from_dict(b) for b in received_blocks]
+            blockchain.replace(blocks)
 
 
 
@@ -223,6 +247,7 @@ application = tornado.web.Application([
     (r"/blocks", Block),
     (r"/addPeer", addPeerHandler),
     (r"/peers", Peers),
+    (r"/websocket", WebSocket),
 ])
 
 
