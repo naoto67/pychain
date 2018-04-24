@@ -3,7 +3,6 @@ import requests
 
 from blockchain import Blockchain
 
-
 blockchain = Blockchain()
 
 peers = []
